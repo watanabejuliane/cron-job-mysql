@@ -1,81 +1,83 @@
-// bibliotecas
+// libraries
 const express = require('express');
 const mysql = require('mysql2');
 const cron = require('node-cron');
 
-//rotas e servidor
+// routes and server
 const app = express();
 
-// configurar banco de dados mysql db1 e db2
-const db1 = mysql.createConnection ({
+// configure MySQL databases db1 and db2
+const db1 = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'Zalman@550',
+    password: '',
     database: 'db1'
 });
 
-const db2 =mysql.createConnection ({
+const db2 = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'Zalman@550',
+    password: '',
     database: 'db2'
 });
 
-// conectar aos bd
-db1.connect( err => {
+// connect to the databases
+db1.connect(err => {
     if (err) throw err;
-    console.log('conectado ao banco de dados db1')});
-
-db2.connect ( err => {
-    if (err) throw err;
-    console.log('conectado ao banco de dados db2')
+    console.log('Connected to database db1');
 });
 
-// criacao das tabelas se nao existirem
-db1.query('CREATE TABLE IF NOT EXISTS tabela1 (id INT PRIMARY KEY, nome VARCHAR(255))', (err) => {
+db2.connect(err => {
     if (err) throw err;
-  console.log('Tabela tabela1 criada ou já existe');
-});
-db2.query('CREATE TABLE IF NOT EXISTS tabela2 (id INT PRIMARY KEY, nome VARCHAR(255))', (err) => {
-    if (err) throw err;
-  console.log('Tabela tabela2 criada ou já existe');
+    console.log('Connected to database db2');
 });
 
-// função para copiar dados
-const copiarDados = (nomeTabela1, nomeTabela2) => {
-    // obter todas as colunas de tabela1 usando DESCRIBE
-    db1.query(`DESCRIBE ${nomeTabela1}`, (err, columns) => {
+// create tables if they do not exist
+db1.query('CREATE TABLE IF NOT EXISTS tabela1 (id INT PRIMARY KEY, nome VARCHAR(255))', err => {
+    if (err) throw err;
+    console.log('Table tabela1 created or already exists');
+});
+
+db2.query('CREATE TABLE IF NOT EXISTS tabela2 (id INT PRIMARY KEY, nome VARCHAR(255))', err => {
+    if (err) throw err;
+    console.log('Table tabela2 created or already exists');
+});
+
+// function to copy data
+const copyData = (sourceTable, targetTable) => {
+    // get all columns from sourceTable using DESCRIBE
+    db1.query(`DESCRIBE ${sourceTable}`, (err, columns) => {
         if (err) {
-            console.error('Erro ao obter informações da tabela:', err);
+            console.error('Error getting table information:', err);
             return;
         }
 
-        // Processar colunas para criar consultas de inserção e atualização
-        const colunas = columns.map(col => col.Field).join(', '); // nomes das colunas
-        const placeholders = columns.map(() => '?').join(', '); // criar placeholders "?" para as colunas
-        const updatePlaceholders = columns.map(col => `${col.Field} = VALUES(${col.Field})`).join(', '); // Atualizações em caso de duplicidade
+        // Process columns to create insert and update queries
+        const columnsList = columns.map(col => col.Field).join(', '); // column names
+        const placeholders = columns.map(() => '?').join(', '); // create placeholders "?" for columns
+        const updatePlaceholders = columns.map(col => `${col.Field} = VALUES(${col.Field})`).join(', '); // updates in case of duplication
 
-        // buscar dados da tabela1
-        db1.query(`SELECT * FROM ${nomeTabela1}`, (err, rows) => {
+        // fetch data from sourceTable
+        db1.query(`SELECT * FROM ${sourceTable}`, (err, rows) => {
             if (err) {
-                console.error('Erro ao buscar dados:', err);
+                console.error('Error fetching data:', err);
                 return;
             }
 
-            rows.forEach((row) => {
-                // Obter valores das colunas para os placeholders
-                const values = columns.map(col => row[col.Field]); // valores das colunas
+            rows.forEach(row => {
+                // Get column values for placeholders
+                const values = columns.map(col => row[col.Field]); // column values
                 
-                // Inserir ou atualizar dados na tabela2
+                // Insert or update data in targetTable
                 db2.query(
-                    `INSERT INTO ${nomeTabela2} (${colunas}) VALUES (${placeholders})
-                    ON DUPLICATE KEY UPDATE ${updatePlaceholders}`, // Atualizar se a chave primária já existir
-                    values, // valores para os placeholders
-                    (err) => {
+                    `INSERT INTO ${targetTable} (${columnsList}) VALUES (${placeholders})
+                    ON DUPLICATE KEY UPDATE ${updatePlaceholders}`, // update if the primary key already exists
+                    values, // values for placeholders
+                    err => {
                         if (err) {
-                            console.error('Erro ao inserir ou atualizar dados:', err);
+                            console.error('Error inserting or updating data:', err);
                         } else {
-                            console.log(`Dados copiados: ${row.id}`);
+                            console.log(`Data copied: ${row.id}`);
                         }
                     }
                 );
@@ -84,17 +86,17 @@ const copiarDados = (nomeTabela1, nomeTabela2) => {
     });
 };
 
-//agendar cron job para rodar a cada minuto
+// schedule cron job to run every minute
 cron.schedule('* * * * *', () => {
-    console.log('Executando cron job...');
-    copiarDados('tabela1', 'tabela2');
+    console.log('Executing cron job...');
+    copyData('tabela1', 'tabela2');
 });
 
-//servidor basico
+// basic server
 app.get('/', (req, res) => {
-    res.send('cron job rodando!');
+    res.send('Cron job is running!');
 });
 
 app.listen(3000, () => {
-    console.log('Servidor rodando na porta 3000');
+    console.log('Server running on port 3000');
 });
