@@ -2,6 +2,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const cron = require('node-cron');
+const fs = require('fs');
 
 // routes and server
 const app = express();
@@ -10,14 +11,14 @@ const app = express();
 const db1 = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '',
+    password: 'Zalman@550',
     database: 'db1'
 });
 
 const db2 = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '',
+    password: 'Zalman@550',
     database: 'db2'
 });
 
@@ -53,7 +54,7 @@ const copyData = (sourceTable, targetTable) => {
         }
 
         // Process columns to create insert and update queries
-        const columnsList = columns.map(col => col.Field).join(', '); // column names
+        const columnsList = columns.map(col => col.Field).join(', '); // column list
         const placeholders = columns.map(() => '?').join(', '); // create placeholders "?" for columns
         const updatePlaceholders = columns.map(col => `${col.Field} = VALUES(${col.Field})`).join(', '); // updates in case of duplication
 
@@ -64,27 +65,40 @@ const copyData = (sourceTable, targetTable) => {
                 return;
             }
 
-            rows.forEach(row => {
-                // Get column values for placeholders
-                const values = columns.map(col => row[col.Field]); // column values
-                
-                // Insert or update data in targetTable
-                db2.query(
-                    `INSERT INTO ${targetTable} (${columnsList}) VALUES (${placeholders})
-                    ON DUPLICATE KEY UPDATE ${updatePlaceholders}`, // update if the primary key already exists
-                    values, // values for placeholders
-                    err => {
-                        if (err) {
-                            console.error('Error inserting or updating data:', err);
-                        } else {
-                            console.log(`Data copied: ${row.id}`);
+            rows.forEach((row) => {
+                //get column values for placeholders
+                const values = columns.map(col => row[col.Field]); //column values
+
+                //insert or update data in targetTable
+                const retryOperation = (attempt = 1) => {
+                    db2.query(
+                        `INSERT INTO ${targetTable} (${columnsList}) VALUES (${placeholders})
+                        ON DUPLICATE KEY UPDATE ${updatePlaceholders}`, // update if primary key already exists
+                        values, // values for placeholders
+                        (err) => {
+                            if (err) {
+                                if (attempt < 3) {
+                                    console.log(`Retrying insert/update, attempt ${attempt}`);
+                                        retryOperation(attempt + 1); //retry operation up to 3 times
+                                } else {
+                                    console.error('Error inserting or updating data:', err);
+                                    fs.appendFile('error.log', `Error inserting or updating data for ID ${row.id}: ${err}\n`, (fsErr) => {
+                                        if (fsErr) console.error('Error writing to log file:', fsErr);
+                                    });
+                                }
+                            } else {
+                                console.log(`Data copied: ${row.id}`);
+                            }
                         }
-                    }
-                );
+                    );
+                };
+                retryOperation(); //start the retry process
             });
         });
-    });
-};
+        });
+    };
+
+
 
 // schedule cron job to run every minute
 cron.schedule('* * * * *', () => {

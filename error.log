@@ -1,0 +1,15 @@
+Error inserting or updating data for ID 1: Error: Table 'db2.tabela2_wrong' doesn't exist
+Error inserting or updating data for ID 2: Error: Table 'db2.tabela2_wrong' doesn't exist
+Error inserting or updating data for ID 3: Error: Table 'db2.tabela2_wrong' doesn't exist
+Error inserting or updating data for ID 1: Error: Table 'db2.tabela2_wrong' doesn't exist
+Error inserting or updating data for ID 2: Error: Table 'db2.tabela2_wrong' doesn't exist
+Error inserting or updating data for ID 3: Error: Table 'db2.tabela2_wrong' doesn't exist
+Error inserting or updating data for ID 1: Error: Table 'db2.tabela2_wrong' doesn't exist
+Error inserting or updating data for ID 2: Error: Table 'db2.tabela2_wrong' doesn't exist
+Error inserting or updating data for ID 3: Error: Table 'db2.tabela2_wrong' doesn't exist
+Error inserting or updating data for ID 1: Error: Field 'invalid_column' doesn't have a default value
+Error inserting or updating data for ID 2: Error: Field 'invalid_column' doesn't have a default value
+Error inserting or updating data for ID 3: Error: Field 'invalid_column' doesn't have a default value
+Error inserting or updating data for ID 1: Error: Field 'invalid_column' doesn't have a default value
+Error inserting or updating data for ID 2: Error: Field 'invalid_column' doesn't have a default value
+Error inserting or updating data for ID 3: Error: Field 'invalid_column' doesn't have a default value
