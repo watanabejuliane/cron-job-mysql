@@ -11,14 +11,14 @@ const app = express();
 const db1 = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'Zalman@550',
+    password: '',
     database: 'db1'
 });
 
 const db2 = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'Zalman@550',
+    password: '',
     database: 'db2'
 });
 
